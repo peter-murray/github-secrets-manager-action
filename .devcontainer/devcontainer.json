@@ -1,5 +1,5 @@
 {
-  "image": "ghcr.io/octodemo/container-nodejs-development:base",
+  "image": "ghcr.io/octodemo/container-nodejs-development:base-latest",
 
   "extensions": [
     "ms-azuretools.vscode-docker",
