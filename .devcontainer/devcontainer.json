@@ -1,5 +1,9 @@
 {
-  "image": "ghcr.io/octodemo/container-nodejs-development:base-latest",
+  "dockerComposeFile": [
+    "docker-compose.yml"
+  ],
+
+  "service": "dev",
 
   "extensions": [
     "ms-azuretools.vscode-docker",
@@ -7,11 +11,6 @@
 
   "settings": {
     "terminal.integrated.shell.linux": "/bin/bash",
-    "java.project.importOnFirstTimeStartup": "automatic",
-    "java.configuration.updateBuildConfiguration": "automatic",
-    "java.server.launchMode": "Standard",
-    "java.test.message.hintForSetingDefaultConfig": false,
-    "maven.pomfile.autoUpdateEffectivePOM": true,
     "telemetry.enableTelemetry": false,
     "extensions.ignoreRecommendations": true
   },
