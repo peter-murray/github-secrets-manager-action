@@ -1,0 +1,1 @@
+# github-secrets-manager-action
