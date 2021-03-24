@@ -1,0 +1,40 @@
+{
+  "name": "github-secrets-manager-action",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "build:add-repository-to-secret": "npm run build && ncc build lib/actions/addRepositoryToSecret.js -o dist/add-repository-to-secret --source-map",
+    "build:remove-repository-from-secret": "npm run build && ncc build lib/actions/removeRepositoryFromSecret.js -o dist/remove-repository-from-secret --source-map",
+    "package": "npm run build:add-repository-to-secret && npm run build:remove-repository-from-secret",
+    "test": "mocha --recursive -r ts-node/register \"src/**/*.test.ts\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/peter-murray/github-secrets-manager-action.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/peter-murray/github-secrets-manager-action/issues"
+  },
+  "homepage": "https://github.com/peter-murray/github-secrets-manager-action#readme",
+  "dependencies": {
+    "@actions/core": "^1.2.6",
+    "@actions/github": "^4.0.0",
+    "@octokit/rest": "^18.3.5",
+    "@octokit/types": "^6.12.2",
+    "@types/chai": "^4.2.15",
+    "@types/mocha": "^8.2.2",
+    "@vercel/ncc": "^0.27.0",
+    "chai": "^4.3.4",
+    "mocha": "^8.3.2",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.35"
+  }
+}

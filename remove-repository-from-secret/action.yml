@@ -1,0 +1,24 @@
+name: 'Secrets: remove repository from organization secret'
+description: Removes a repository from access to an organization secret
+author: 'Peter Murray'
+
+inputs:
+  github_token:
+    description: The GitHub token that has 'admin:org' permissions to access and modify secrets on the specified organization
+    required: true
+
+  organization:
+    description: The organization name that holds the secrets
+    required: true
+
+  secret:
+    description: The name of the organization secret to add the reposiotry to (needs to have access configured for 'selected' repositories)
+    required: true
+
+  repository:
+    description: The name of the repository that will be provided access to the secret. Note, this must exist under the specified organization.
+    required: true
+
+runs:
+  using: node12
+  main: '../dist/remove-repository-from-secret/index.js'
