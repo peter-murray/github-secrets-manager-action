@@ -25,3 +25,16 @@ export function getOctokit(token?: string): Octokit {
   }
   return github.getOctokit(octokitToken);
 }
+
+export function requireStringArgumentValue(name: string, value: any) {
+  if (value === null || value === undefined) {
+    throw new Error(`Need to provide a value for argument "${name}"`);
+  }
+
+  const strValue = `${value}`.trim();
+  if (strValue.length === 0) {
+    throw new Error(`"${name}" value provided was zero length or empty string`)
+  }
+
+  return strValue;
+}

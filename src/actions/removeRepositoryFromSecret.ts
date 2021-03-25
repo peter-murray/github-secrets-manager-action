@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { SecretsManager } from '../SecretsManager';
+import { SecretsManager } from '../secrets/SecretsManager';
 import { getRequiredInput, getOctokit } from '../utils'
 
 async function run() {
