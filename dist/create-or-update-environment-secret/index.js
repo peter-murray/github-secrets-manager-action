@@ -2,7 +2,7 @@ require('./sourcemap-register.js');module.exports =
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 1854:
+/***/ 8603:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -40,23 +40,38 @@ async function run() {
 }
 run();
 async function exec() {
-    const organization = utils_1.getRequiredInput('organization'), secretName = utils_1.getRequiredInput('secret'), repository = utils_1.getRequiredInput('repository');
+    const secretName = utils_1.getRequiredInput('secret'), secretValue = utils_1.getRequiredInput('value'), repository = utils_1.getRequiredInput('repository'), environment = utils_1.getRequiredInput('environment');
+    // Register the secret value so it is masked in logs
+    core.setSecret(secretValue);
     try {
-        const secrets = new SecretsManager_1.SecretsManager(utils_1.getOctokit(), organization);
-        const result = await secrets.addSecretToRepository(secretName, repository);
+        const repo = validateRepository(repository);
+        const secrets = new SecretsManager_1.SecretsManager(utils_1.getOctokit(), repo.owner);
+        const result = await secrets.saveOrUpdateEnvironmentSecret(repo.repo, environment, secretName, secretValue);
         if (result) {
-            core.info(`Successfully added ${repository} to secret ${organization}/${secretName}.`);
+            core.info(`Successfully updated secret ${repository}/${environment}/${secretName}.`);
         }
         else {
-            core.setFailed(`Did not succeed in adding ${repository} to secret ${organization}/${secretName}`);
+            core.setFailed(`Did not succeed in creating/updating secret ${repository}/${environment}/${secretName}`);
         }
     }
     catch (err) {
-        core.error(`Failed to add repository ${repository} to secret ${organization}/${secretName}.`);
+        core.error(`Failed to add/update secret ${repository}/${environment}/${secretName}.`);
         core.setFailed(err);
     }
 }
-//# sourceMappingURL=addRepositoryToSecret.js.map
+function validateRepository(repository) {
+    if (repository.indexOf('/') > 0) {
+        const parts = repository.split('/');
+        return {
+            owner: parts[0],
+            repo: parts[1]
+        };
+    }
+    else {
+        throw new Error(`A fully qualified repository name of the form '<owner>/<repo>' is required, but was '${repository}'.`);
+    }
+}
+//# sourceMappingURL=addOrUpdateEnvironmentSecret.js.map
 
 /***/ }),
 
@@ -9667,7 +9682,7 @@ module.exports = require("zlib");;
 /******/ 	// module exports must be returned from runtime so entry inlining is disabled
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
-/******/ 	return __nccwpck_require__(1854);
+/******/ 	return __nccwpck_require__(8603);
 /******/ })()
 ;
 //# sourceMappingURL=index.js.map

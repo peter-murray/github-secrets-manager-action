@@ -8,7 +8,8 @@
     "build:add-repository-to-secret": "npm run build && ncc build lib/actions/addRepositoryToSecret.js -o dist/add-repository-to-secret --source-map",
     "build:remove-repository-from-secret": "npm run build && ncc build lib/actions/removeRepositoryFromSecret.js -o dist/remove-repository-from-secret --source-map",
     "build:create-or-update-secret": "npm run build && ncc build lib/actions/addOrUpdateRepositorySecret.js -o dist/create-or-update-secret --source-map",
-    "package": "npm run build:add-repository-to-secret && npm run build:remove-repository-from-secret  && npm run build:create-or-update-secret",
+    "build:create-or-update-environment-secret": "npm run build && ncc build lib/actions/addOrUpdateEnvironmentSecret.js -o dist/create-or-update-environment-secret --source-map",
+    "package": "npm run build:add-repository-to-secret && npm run build:remove-repository-from-secret  && npm run build:create-or-update-secret && npm run build:create-or-update-environment-secret",
     "test": "mocha --recursive -r ts-node/register \"src/**/*.test.ts\""
   },
   "repository": {
@@ -23,11 +24,11 @@
   },
   "homepage": "https://github.com/peter-murray/github-secrets-manager-action#readme",
   "dependencies": {
-    "@actions/core": "^1.2.6",
+    "@actions/core": "^1.2.7",
     "@actions/github": "^4.0.0",
-    "@octokit/rest": "^18.5.2",
-    "@octokit/types": "^6.13.0",
-    "@types/chai": "^4.2.16",
+    "@octokit/rest": "^18.5.3",
+    "@octokit/types": "^6.14.2",
+    "@types/chai": "^4.2.17",
     "@types/mocha": "^8.2.2",
     "@vercel/ncc": "^0.27.0",
     "chai": "^4.3.4",
@@ -37,6 +38,6 @@
     "typescript": "^4.2.4"
   },
   "devDependencies": {
-    "@types/node": "^14.14.37"
+    "@types/node": "^14.14.44"
   }
 }

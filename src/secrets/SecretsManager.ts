@@ -2,7 +2,7 @@ import { Octokit } from '@octokit/core';
 
 import { OrganizationSecret } from './OrganizationSecret';
 import { Encrypt } from './Encrypt';
-import { Repository, SecretPublicKey, OrgSecretVisibility } from './types';
+import { Repository, SecretPublicKey, OrgSecretVisibility, EnvironmentSecretPublicKey, Environment, EnvironmentSecretData } from './types';
 
 export class SecretsManager {
 
@@ -59,6 +59,33 @@ export class SecretsManager {
           return undefined;
         }
         throw err;
+      });
+  }
+
+  async getEnvironmentSecret(repositoryName: string, environmentName: string, secretName: string): Promise<EnvironmentSecretData | undefined> {
+    return this.getEnvironment(repositoryName, environmentName)
+      .then(environment => {
+        if (environment) {
+          this.octokit.actions.getEnvironmentSecret({
+            repository_id: environment.repository_id,
+            environment_name: environment.name,
+            secret_name: secretName,
+          })
+          .then(secret => {
+            return {
+              ...secret.data,
+              repository_id: environment.repository_id,
+              environment_name: environment.name,
+            };
+          })
+          .catch(err => {
+            if (err.status === 404) {
+              return undefined;
+            }
+            throw err;
+          });
+        }
+        return undefined;
       });
   }
 
@@ -120,6 +147,37 @@ export class SecretsManager {
     })
   }
 
+  async getEnvironment(repositoryName: string, environmentName: string): Promise<Environment> {
+    return this.getRepository(repositoryName)
+      .then(repo => {
+        if (repo) {
+          return this.octokit.repos.getEnvironment({
+            owner: repo.owner,
+            repo: repo.name,
+            environment_name: environmentName
+          })
+          .then(data => {
+            return {
+              id: data.data.id,
+              name: data.data.name,
+              url: data.data.url,
+              created_at: data.data.created_at,
+              updated_at: data.data.updated_at,
+              repository_id: repo.id,
+            }
+          })
+          .catch(err => {
+            if (err.status === 404) {
+              return undefined;
+            }
+            throw err;
+          });
+        }
+
+        return undefined;
+      });
+  }
+
   async getRepository(name: string): Promise<Repository | undefined> {
     return this.octokit.repos.get({
         owner: this.organization,
@@ -170,6 +228,35 @@ export class SecretsManager {
         throw err;
       });
   }
+
+  async getEnvironmentPublicKey(repoName: string, environmentName: string): Promise<EnvironmentSecretPublicKey | undefined> {
+    return this.getRepository(repoName)
+      .then(repo => {
+        if (repo) {
+          return this.octokit.actions.getRepositoryEnvironmentPublicKey({
+            repository_id: repo.id,
+            environment_name: environmentName,
+          })
+          .then(result => {
+            if (result && result.data) {
+              return {
+                id: result.data.key_id,
+                key: result.data.key,
+                repository_id: repo.id,
+              };
+            }
+            return undefined;
+          });
+        }
+      })
+      .catch(err => {
+        if (err.status === 404) {
+          return undefined;
+        }
+        throw err;
+      });
+  }
+
 
   async getOrganizationPublicKey(): Promise<SecretPublicKey | undefined> {
     return this.octokit.actions.getOrgPublicKey({ org: this.organization })
@@ -270,6 +357,34 @@ export class SecretsManager {
       });
   }
 
+  async saveOrUpdateEnvironmentSecret(repositoryName: string, environmentName: string, secretName: string, value: string): Promise<'created' | 'updated'> {
+    return this.getEnvironmentPublicKey(repositoryName, environmentName)
+      .then(key => {
+        if (!key) {
+          throw new Error(`Failed to resolve public key for environment ${this.organization}/${repositoryName}/environment/${environmentName}`);
+        }
+        const encrypter = new Encrypt(key.key);
+        const encryptedSecret = encrypter.encryptValue(value);
+
+        return this.octokit.actions.createOrUpdateEnvironmentSecret({
+          repository_id: key.repository_id,
+          environment_name: environmentName,
+          secret_name: secretName,
+          key_id: key.id,
+          encrypted_value: encryptedSecret
+        })
+      })
+      .then(result => {
+        if (result.status === 201) {
+          return 'created';
+        } else if (result.status === 204) {
+          return 'updated';
+        } else {
+          throw new Error(`Unexpected status code from setting secret value ${result.status}`);
+        }
+      });
+  }
+
   async deleteOrganizationSecret(secretName: string): Promise<boolean> {
     return this.octokit.actions.deleteOrgSecret({
       org: this.organization,
@@ -287,6 +402,31 @@ export class SecretsManager {
             owner: repo.owner,
             repo: repo.name,
             secret_name: secretName
+          });
+        }
+      })
+      .then(result => {
+        if (result) {
+          return result.status === 204;
+        }
+        return false;
+      })
+      .catch(err => {
+        if (err.status === 404) {
+          return true;
+        }
+        throw err;
+      });
+  }
+
+  async deleteEnvironmentSecret(repositoryName: string, environmentName: string,  secretName: string): Promise<boolean> {
+    return this.getEnvironmentSecret(repositoryName, environmentName, secretName)
+      .then(secret => {
+        if (secret) {
+          return this.octokit.actions.deleteEnvironmentSecret({
+            repository_id: secret.repository_id,
+            environment_name: secret.environment_name,
+            secret_name: secret.name,
           });
         }
       })
