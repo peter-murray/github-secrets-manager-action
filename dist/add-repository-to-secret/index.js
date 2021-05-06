@@ -355,7 +355,7 @@ class SecretsManager {
         return this.getRepository(repoName)
             .then(repo => {
             if (repo) {
-                return this.octokit.actions.getRepositoryEnvironmentPublicKey({
+                return this.octokit.actions.getEnvironmentPublicKey({
                     repository_id: repo.id,
                     environment_name: environmentName,
                 })
