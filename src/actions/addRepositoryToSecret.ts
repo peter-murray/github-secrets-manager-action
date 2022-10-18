@@ -5,7 +5,7 @@ import { getRequiredInput, getOctokit } from '../utils'
 async function run() {
   try {
     await exec();
-  } catch (err) {
+  } catch (err: any) {
     core.setFailed(err);
   }
 }
@@ -27,7 +27,7 @@ async function exec() {
     } else {
       core.setFailed(`Did not succeed in adding ${repository} to secret ${organization}/${secretName}`);
     }
-  } catch (err) {
+  } catch (err: any) {
     core.error(`Failed to add repository ${repository} to secret ${organization}/${secretName}.`);
     core.setFailed(err);
   }

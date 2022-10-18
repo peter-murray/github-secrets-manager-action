@@ -5,7 +5,7 @@ import { getRequiredInput, getOctokit } from '../utils'
 async function run() {
   try {
     await exec();
-  } catch (err) {
+  } catch (err: any) {
     core.setFailed(err);
   }
 }
@@ -32,7 +32,7 @@ async function exec() {
     } else {
       core.setFailed(`Did not succeed in creating/updating secret ${repository}/${environment}/${secretName}`);
     }
-  } catch (err) {
+  } catch (err: any) {
     core.error(`Failed to add/update secret ${repository}/${environment}/${secretName}.`);
     core.setFailed(err);
   }

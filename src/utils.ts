@@ -2,6 +2,11 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import {Octokit} from '@octokit/core';
 
+declare const GitHubConst: typeof Octokit & import("@octokit/core/dist-types/types").Constructor<import("@octokit/plugin-rest-endpoint-methods/dist-types/types").Api & {
+  paginate: import("@octokit/plugin-paginate-rest").PaginateInterface;
+}>;
+export type GitHub = InstanceType<typeof GitHubConst>
+
 export function getGitHubToken(): string {
   const token = process.env['GITHUB_TOKEN'];
 
@@ -15,7 +20,7 @@ export function getRequiredInput(name: string): string {
   return core.getInput(name, {required: true});
 }
 
-export function getOctokit(token?: string): Octokit {
+export function getOctokit(token?: string): GitHub {
   let octokitToken: string;
 
   if (!token) {

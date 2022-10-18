@@ -1,4 +1,4 @@
-import { Octokit } from '@octokit/core';
+import { GitHub } from '../utils';
 
 import { OrganizationSecret } from './OrganizationSecret';
 import { Encrypt } from './Encrypt';
@@ -6,11 +6,11 @@ import { Repository, SecretPublicKey, OrgSecretVisibility, EnvironmentSecretPubl
 
 export class SecretsManager {
 
-  private octokit: Octokit;
+  private octokit: GitHub;
 
   private organization: string;
 
-  constructor(octokit: Octokit, organization: string) {
+  constructor(octokit: GitHub, organization: string) {
     this.octokit = octokit;
     this.organization = organization;
   }
@@ -21,13 +21,13 @@ export class SecretsManager {
       secret_name: name
     };
 
-    return this.octokit.actions.getOrgSecret(secretPayload)
+    return this.octokit.rest.actions.getOrgSecret(secretPayload)
       .then(resp => {
         if (resp.status === 200) {
           const data = resp.data;
 
           if (data.selected_repositories_url) {
-            return this.octokit.actions.listSelectedReposForOrgSecret(secretPayload)
+            return this.octokit.rest.actions.listSelectedReposForOrgSecret(secretPayload)
               .then(resp => {
                 const selectedRepos = resp.data;
 
@@ -66,7 +66,7 @@ export class SecretsManager {
     return this.getEnvironment(repositoryName, environmentName)
       .then(environment => {
         if (environment) {
-          this.octokit.actions.getEnvironmentSecret({
+          this.octokit.rest.actions.getEnvironmentSecret({
             repository_id: environment.repository_id,
             environment_name: environment.name,
             secret_name: secretName,
@@ -128,7 +128,7 @@ export class SecretsManager {
   }
 
   async addRepositoryToSecret(secret: OrganizationSecret, repo: Repository): Promise<boolean> {
-    return this.octokit.actions.addSelectedRepoToOrgSecret({
+    return this.octokit.rest.actions.addSelectedRepoToOrgSecret({
       org: this.organization,
       secret_name: secret.name,
       repository_id: repo.id,
@@ -138,7 +138,7 @@ export class SecretsManager {
   }
 
   async removeRepositoryFromSecret(secret: OrganizationSecret, repo: Repository): Promise<boolean> {
-    return this.octokit.actions.removeSelectedRepoFromOrgSecret({
+    return this.octokit.rest.actions.removeSelectedRepoFromOrgSecret({
       org: this.organization,
       repository_id: repo.id,
       secret_name: secret.name
@@ -147,11 +147,11 @@ export class SecretsManager {
     })
   }
 
-  async getEnvironment(repositoryName: string, environmentName: string): Promise<Environment> {
+  async getEnvironment(repositoryName: string, environmentName: string): Promise<Environment | undefined> {
     return this.getRepository(repositoryName)
       .then(repo => {
         if (repo) {
-          return this.octokit.repos.getEnvironment({
+          return this.octokit.rest.repos.getEnvironment({
             owner: repo.owner,
             repo: repo.name,
             environment_name: environmentName
@@ -179,7 +179,7 @@ export class SecretsManager {
   }
 
   async getRepository(name: string): Promise<Repository | undefined> {
-    return this.octokit.repos.get({
+    return this.octokit.rest.repos.get({
         owner: this.organization,
         repo: name,
         mediaType: {
@@ -209,7 +209,7 @@ export class SecretsManager {
     return this.getRepository(name)
       .then(repo => {
         if (repo) {
-          return this.octokit.actions.getRepoPublicKey({ owner: repo.owner, repo: repo.name })
+          return this.octokit.rest.actions.getRepoPublicKey({ owner: repo.owner, repo: repo.name })
         }
       })
       .then(result => {
@@ -233,7 +233,7 @@ export class SecretsManager {
     return this.getRepository(repoName)
       .then(repo => {
         if (repo) {
-          return this.octokit.actions.getEnvironmentPublicKey({
+          return this.octokit.rest.actions.getEnvironmentPublicKey({
             repository_id: repo.id,
             environment_name: environmentName,
           })
@@ -259,7 +259,7 @@ export class SecretsManager {
 
 
   async getOrganizationPublicKey(): Promise<SecretPublicKey | undefined> {
-    return this.octokit.actions.getOrgPublicKey({ org: this.organization })
+    return this.octokit.rest.actions.getOrgPublicKey({ org: this.organization })
       .then(result => {
         if (result && result.data) {
           return {
@@ -317,7 +317,8 @@ export class SecretsManager {
         }
       }
 
-      return this.octokit.actions.createOrUpdateOrgSecret(payload);
+      // @ts-ignore Visibility is set above
+      return this.octokit.rest.actions.createOrUpdateOrgSecret(payload);
     }).then(result => {
       if (result.status === 201) {
         return 'created';
@@ -338,7 +339,7 @@ export class SecretsManager {
         const encrypter = new Encrypt(key.key);
         const encryptedSecret = encrypter.encryptValue(value);
 
-        return this.octokit.actions.createOrUpdateRepoSecret({
+        return this.octokit.rest.actions.createOrUpdateRepoSecret({
           owner: this.organization,
           repo: repositoryName,
           secret_name: secretName,
@@ -366,7 +367,7 @@ export class SecretsManager {
         const encrypter = new Encrypt(key.key);
         const encryptedSecret = encrypter.encryptValue(value);
 
-        return this.octokit.actions.createOrUpdateEnvironmentSecret({
+        return this.octokit.rest.actions.createOrUpdateEnvironmentSecret({
           repository_id: key.repository_id,
           environment_name: environmentName,
           secret_name: secretName,
@@ -386,7 +387,7 @@ export class SecretsManager {
   }
 
   async deleteOrganizationSecret(secretName: string): Promise<boolean> {
-    return this.octokit.actions.deleteOrgSecret({
+    return this.octokit.rest.actions.deleteOrgSecret({
       org: this.organization,
       secret_name: secretName
     }).then(result => {
@@ -398,7 +399,7 @@ export class SecretsManager {
     return this.getRepository(repositoryName)
       .then(repo => {
         if (repo) {
-          return this.octokit.actions.deleteRepoSecret({
+          return this.octokit.rest.actions.deleteRepoSecret({
             owner: repo.owner,
             repo: repo.name,
             secret_name: secretName
@@ -423,7 +424,7 @@ export class SecretsManager {
     return this.getEnvironmentSecret(repositoryName, environmentName, secretName)
       .then(secret => {
         if (secret) {
-          return this.octokit.actions.deleteEnvironmentSecret({
+          return this.octokit.rest.actions.deleteEnvironmentSecret({
             repository_id: secret.repository_id,
             environment_name: secret.environment_name,
             secret_name: secret.name,
