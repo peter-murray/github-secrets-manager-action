@@ -26,7 +26,7 @@ describe('Encrypt', () => {
     it('should fail on encrypting null', async () => {
       try {
         encrypt.encryptValue(null);
-      } catch(err) {
+      } catch(err: any) {
         expect(err.message).to.contain('Need to provide a value');
       }
     });
@@ -34,7 +34,7 @@ describe('Encrypt', () => {
     it('should fail on encrypting undefined', async () => {
       try {
         encrypt.encryptValue(undefined);
-      } catch(err) {
+      } catch(err: any) {
         expect(err.message).to.contain('Need to provide a value');
       }
     });
@@ -42,7 +42,7 @@ describe('Encrypt', () => {
     it('should fail on encrypting an empty string', async () => {
       try {
         encrypt.encryptValue('');
-      } catch(err) {
+      } catch(err: any) {
         expect(err.message).to.contain('was zero length or empty string');
       }
     });

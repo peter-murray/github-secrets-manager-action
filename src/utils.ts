@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import {Octokit} from '@octokit/core';
+
 
 export function getGitHubToken(): string {
   const token = process.env['GITHUB_TOKEN'];
@@ -15,7 +15,7 @@ export function getRequiredInput(name: string): string {
   return core.getInput(name, {required: true});
 }
 
-export function getOctokit(token?: string): Octokit {
+export function getOctokit(token?: string) {
   let octokitToken: string;
 
   if (!token) {

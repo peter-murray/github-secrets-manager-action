@@ -150,7 +150,7 @@ describe('SecretsManager', () => {
 
       try {
         await secretsManager.saveOrUpdateRepositorySecret(nonExistentRepo, secretName, 'testing');
-      } catch (err) {
+      } catch (err: any) {
         expect(err.message).to.contain(nonExistentRepo);
       }
     });
