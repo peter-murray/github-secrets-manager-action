@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import {Encrypt} from './Encrypt'
+import {Encrypt} from './Encrypt.js'
 
 const PUBLIC_KEY: string = 'S953BUzsjznd35oVNTJvlg4iesXZuAL6PS4NB+2EXB0=';
 

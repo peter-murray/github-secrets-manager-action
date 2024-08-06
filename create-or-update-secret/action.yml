@@ -19,6 +19,11 @@ inputs:
     description: The value for the secret to be stored (will be encrypted using libsodium keys)
     required: true
 
+  overwrite_existing:
+    description: Flag to overwrite an existing secret
+    default: true
+    required: false
+
 runs:
   using: node20
-  main: '../dist/create-or-update-secret/index.js'
+  main: '../dist/create-or-update-repository-secret/index.js'

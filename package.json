@@ -5,11 +5,11 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "build:add-repository-to-secret": "npm run build && ncc build lib/actions/addRepositoryToSecret.js -o dist/add-repository-to-secret --source-map",
-    "build:remove-repository-from-secret": "npm run build && ncc build lib/actions/removeRepositoryFromSecret.js -o dist/remove-repository-from-secret --source-map",
-    "build:create-or-update-secret": "npm run build && ncc build lib/actions/addOrUpdateRepositorySecret.js -o dist/create-or-update-secret --source-map",
-    "build:create-or-update-environment-secret": "npm run build && ncc build lib/actions/addOrUpdateEnvironmentSecret.js -o dist/create-or-update-environment-secret --source-map",
-    "package": "npm run build:add-repository-to-secret && npm run build:remove-repository-from-secret  && npm run build:create-or-update-secret && npm run build:create-or-update-environment-secret",
+    "build:add-repository-to-secret": "ncc build lib/actions/add-repository-to-secret.js -o dist/add-repository-to-secret --source-map",
+    "build:remove-repository-from-secret": "ncc build lib/actions/remove-repository-from-secret.js -o dist/remove-repository-from-secret --source-map",
+    "build:create-or-update-repository-secret": "ncc build lib/actions/create-or-update-repository-secret.js -o dist/create-or-update-repository-secret --source-map",
+    "build:create-or-update-environment-secret": "ncc build lib/actions/create-or-update-environment-secret.js -o dist/create-or-update-environment-secret --source-map",
+    "build:actions": "npm run build && npm run build:add-repository-to-secret && npm run build:remove-repository-from-secret  && npm run build:create-or-update-repository-secret && npm run build:create-or-update-environment-secret",
     "test": "mocha --recursive -r ts-node/register \"src/**/*.test.ts\""
   },
   "repository": {

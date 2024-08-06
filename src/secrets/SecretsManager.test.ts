@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import {SecretsManager} from './SecretsManager';
-import {getGitHubToken, getOctokit} from '../utils'
+import {SecretsManager} from './SecretsManager.js';
+import {getGitHubToken, getOctokit} from '../utils.js'
 
 describe('SecretsManager', () => {
 

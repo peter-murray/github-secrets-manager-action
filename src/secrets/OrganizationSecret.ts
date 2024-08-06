@@ -1,4 +1,4 @@
-import {OrgSecretData, Repository} from './types';
+import {OrgSecretData, Repository} from './types.js';
 
 export class OrganizationSecret {
 

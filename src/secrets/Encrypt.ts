@@ -1,5 +1,5 @@
-import * as sodium  from 'tweetsodium';
-import {requireStringArgumentValue} from '../utils';
+import * as sodium  from 'libsodium';
+import {requireStringArgumentValue} from '../utils.js';
 
 export class Encrypt {
 

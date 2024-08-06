@@ -25,6 +25,12 @@ export type OrgSecretData = {
   selected_repositories_url?: string
 }
 
+export type RepoSecretData = {
+  name: string,
+  created_at: string,
+  updated_at: string,
+}
+
 export type EnvironmentSecretData = {
   name: string
   created_at: string

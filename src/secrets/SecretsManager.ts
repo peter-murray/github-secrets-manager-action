@@ -1,6 +1,7 @@
-import { OrganizationSecret } from './OrganizationSecret';
-import { Encrypt } from './Encrypt';
-import { Repository, SecretPublicKey, OrgSecretVisibility, EnvironmentSecretPublicKey, Environment, EnvironmentSecretData } from './types';
+import { OrganizationSecret } from './OrganizationSecret.js';
+import { RepositorySecret } from './RepositorySecret.js';
+import { Encrypt } from './Encrypt.js';
+import { Repository, SecretPublicKey, OrgSecretVisibility, EnvironmentSecretPublicKey, Environment, EnvironmentSecretData } from './types.js';
 
 export class SecretsManager {
 
@@ -49,6 +50,28 @@ export class SecretsManager {
           } else {
             return new OrganizationSecret(this.organization, resp.data);
           }
+        } else {
+          throw new Error(`Unexpected status code ${resp.status}`);
+        }
+      }).catch(err => {
+        if (err.status === 404) {
+          return undefined;
+        }
+        throw err;
+      });
+  }
+
+  async getRepositorySecret(repositoryName: string, secretName: string): Promise<RepositorySecret | undefined> {
+    const secretPayload = {
+      owner: this.organization,
+      repo: repositoryName,
+      secret_name: secretName
+    }
+
+    return this.octokit.rest.actions.getRepoSecret(secretPayload)
+      .then(resp => {
+        if (resp.status === 200) {
+          return new RepositorySecret(this.organization, repositoryName, resp.data);
         } else {
           throw new Error(`Unexpected status code ${resp.status}`);
         }
@@ -327,7 +350,14 @@ export class SecretsManager {
     });
   }
 
-  async saveOrUpdateRepositorySecret(repositoryName: string, secretName: string, value: string): Promise<'created' | 'updated'> {
+  async saveOrUpdateRepositorySecret(repositoryName: string, secretName: string, value: string, overwrite: boolean = true): Promise<'created' | 'updated' | 'exists'> {
+    if (overwrite === false) {
+      const existing = await this.getRepositorySecret(repositoryName, secretName);
+      if (existing) {
+        return 'exists';
+      }
+    }
+
     return this.getRepositoryPublicKey(repositoryName)
       .then(key => {
         if (!key) {
@@ -355,7 +385,14 @@ export class SecretsManager {
       });
   }
 
-  async saveOrUpdateEnvironmentSecret(repositoryName: string, environmentName: string, secretName: string, value: string): Promise<'created' | 'updated'> {
+  async saveOrUpdateEnvironmentSecret(repositoryName: string, environmentName: string, secretName: string, value: string, overwrite: boolean = true): Promise<'created' | 'updated' | 'exists'> {
+    if (overwrite === false) {
+      const existing = await this.getEnvironmentSecret(repositoryName, environmentName, secretName);
+      if (existing) {
+        return 'exists';
+      }
+    }
+
     return this.getEnvironmentPublicKey(repositoryName, environmentName)
       .then(key => {
         if (!key) {
