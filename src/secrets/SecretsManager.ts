@@ -84,30 +84,29 @@ export class SecretsManager {
   }
 
   async getEnvironmentSecret(repositoryName: string, environmentName: string, secretName: string): Promise<EnvironmentSecretData | undefined> {
-    return this.getEnvironment(repositoryName, environmentName)
-      .then(environment => {
-        if (environment) {
-          this.octokit.rest.actions.getEnvironmentSecret({
-            repository_id: environment.repository_id,
-            environment_name: environment.name,
-            secret_name: secretName,
-          })
-          .then(secret => {
-            return {
-              ...secret.data,
-              repository_id: environment.repository_id,
-              environment_name: environment.name,
-            };
-          })
-          .catch(err => {
-            if (err.status === 404) {
-              return undefined;
-            }
-            throw err;
-          });
+    const environment = await this.getEnvironment(repositoryName, environmentName);
+
+    if (environment) {
+      try {
+        const secret = await this.octokit.rest.actions.getEnvironmentSecret({
+          repository_id: environment.repository_id,
+          environment_name: environment.name,
+          secret_name: secretName,
+        });
+
+        return {
+          ...secret.data,
+          repository_id: environment.repository_id,
+          environment_name: environment.name,
+        };
+      } catch (err: any) {
+        if (err.status === 404) {
+          return undefined;
         }
-        return undefined;
-      });
+        throw err;
+      }
+    }
+    return undefined;
   }
 
   async addSecretToRepository(name: string, repositoryName: string): Promise<boolean> {
@@ -372,7 +371,7 @@ export class SecretsManager {
   }
 
   async saveOrUpdateEnvironmentSecret(repositoryName: string, environmentName: string, secretName: string, value: string, overwrite: boolean = true): Promise<'created' | 'updated' | 'exists'> {
-    if (overwrite === false) {
+    if (!overwrite) {
       const existing = await this.getEnvironmentSecret(repositoryName, environmentName, secretName);
       if (existing) {
         return 'exists';
@@ -413,53 +412,41 @@ export class SecretsManager {
   }
 
   async deleteRepositorySecret(repositoryName: string, secretName: string): Promise<boolean> {
-    return this.getRepository(repositoryName)
-      .then(repo => {
-        if (repo) {
-          return this.octokit.rest.actions.deleteRepoSecret({
-            owner: repo.owner,
-            repo: repo.name,
-            secret_name: secretName
-          });
-        }
-      })
-      .then(result => {
-        if (result) {
-          return result.status === 204;
-        }
-        return false;
-      })
-      .catch(err => {
-        if (err.status === 404) {
-          return true;
-        }
-        throw err;
+    const repo = await this.getRepository(repositoryName)
+
+    if (repo) {
+      const result = await this.octokit.rest.actions.deleteRepoSecret({
+        owner: repo.owner,
+        repo: repo.name,
+        secret_name: secretName
       });
+
+      if (result) {
+        return result.status === 204;
+      }
+      return false;
+    }
+    return false;
   }
 
   async deleteEnvironmentSecret(repositoryName: string, environmentName: string,  secretName: string): Promise<boolean> {
-    return this.getEnvironmentSecret(repositoryName, environmentName, secretName)
-      .then(secret => {
-        if (secret) {
-          return this.octokit.rest.actions.deleteEnvironmentSecret({
-            repository_id: secret.repository_id,
-            environment_name: secret.environment_name,
-            secret_name: secret.name,
-          });
-        }
-      })
-      .then(result => {
-        if (result) {
-          return result.status === 204;
-        }
-        return false;
-      })
-      .catch(err => {
-        if (err.status === 404) {
-          return true;
-        }
-        throw err;
+    const secret = await this.getEnvironmentSecret(repositoryName, environmentName, secretName);
+
+    if (secret) {
+      const result = await this.octokit.rest.actions.deleteEnvironmentSecret({
+        repository_id: secret.repository_id,
+        environment_name: secret.environment_name,
+        secret_name: secret.name,
       });
+
+      if (result) {
+        return result.status === 204;
+      }
+      return false;
+    } else {
+      // The secret does not exist, so we can consider it deleted
+      return true;
+    }
   }
 }
 

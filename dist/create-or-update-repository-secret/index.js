@@ -1,7 +1,7 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 263:
+/***/ 4297:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -43,34 +43,22 @@ async function run() {
 }
 run();
 async function exec() {
-    const inputs = {
-        repository: (0, utils_js_1.getRequiredInput)('repository'),
-        secretName: (0, utils_js_1.getRequiredInput)('secret'),
-        secretValue: (0, utils_js_1.getRequiredInput)('value'),
-        environment: (0, utils_js_1.getRequiredInput)('environment'),
-        overwrite: core.getBooleanInput('overwrite_existing', { required: true }),
-    };
+    const secretName = (0, utils_js_1.getRequiredInput)('secret'), secretValue = (0, utils_js_1.getRequiredInput)('value'), repository = (0, utils_js_1.getRequiredInput)('repository');
     // Register the secret value so it is masked in logs
-    core.setSecret(inputs.secretValue);
+    core.setSecret(secretValue);
     try {
-        const repo = validateRepository(inputs.repository);
+        const repo = validateRepository(repository);
         const secrets = new SecretsManager_js_1.SecretsManager((0, utils_js_1.getOctokit)(), repo.owner);
-        const result = await secrets.saveOrUpdateEnvironmentSecret(repo.repo, inputs.environment, inputs.secretName, inputs.secretValue, inputs.overwrite);
-        if (result === 'created') {
-            core.info(`Successfully created secret ${inputs.repository}/${inputs.environment}/${inputs.secretName}.`);
-        }
-        else if (result === 'updated') {
-            core.info(`Successfully updated secret ${inputs.repository}/${inputs.environment}/${inputs.secretName}.`);
-        }
-        else if (result === 'exists') {
-            core.info(`Secret ${inputs.repository}/${inputs.environment}/${inputs.secretName}, already exists, but not overwriting existing value.`);
+        const result = await secrets.saveOrUpdateRepositorySecret(repo.repo, secretName, secretValue);
+        if (result) {
+            core.info(`Successfully ${result} secret ${repository}/${secretName}.`);
         }
         else {
-            core.setFailed(`Did not succeed in creating/updating secret ${inputs.repository}/${inputs.environment}/${inputs.secretName}`);
+            core.setFailed(`Did not succeed in creating/updating secret ${repository}/${secretName}`);
         }
     }
     catch (err) {
-        core.error(`Failed to add/update secret ${inputs.repository}/${inputs.environment}/${inputs.secretName}.`);
+        core.error(`Failed to add/update secret ${repository}/${secretName}.`);
         core.setFailed(err);
     }
 }
@@ -86,7 +74,7 @@ function validateRepository(repository) {
         throw new Error(`A fully qualified repository name of the form '<owner>/<repo>' is required, but was '${repository}'.`);
     }
 }
-//# sourceMappingURL=create-or-update-environment-secret.js.map
+//# sourceMappingURL=create-or-update-repository-secret.js.map
 
 /***/ }),
 
@@ -34438,7 +34426,7 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(263);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(4297);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()

@@ -1,0 +1,29 @@
+name: 'Secrets: create or update repository secret'
+description: Creates or updates a secret value on a repository
+author: 'Peter Murray'
+
+inputs:
+  github_token:
+    description: The GitHub token that has 'admin:org' permissions to access and modify secrets on the specified organization
+    required: true
+
+  repository:
+    description: The full path to the repository to save the secret to
+    required: true
+
+  secret:
+    description: The name of the secret to add or update
+    required: true
+
+  value:
+    description: The value for the secret to be stored (will be encrypted using libsodium keys)
+    required: true
+
+  overwrite_existing:
+    description: Flag to overwrite an existing secret
+    default: true
+    required: false
+
+runs:
+  using: node20
+  main: '../dist/create-or-update-repository-secret/index.js'

@@ -155,4 +155,51 @@ describe('SecretsManager', () => {
       }
     });
   });
+
+  describe('#saveOrUpdateEnvironmentSecret() and #deleteEnvironmentSecret()', () => {
+
+    const repositoryName = 'secrets-test-repository';
+
+    const environmentName = 'testing';
+
+    let secretName: string | undefined;
+
+    afterEach(async () => {
+      if (secretName) {
+        const result = await secretsManager.deleteEnvironmentSecret(repositoryName, environmentName, secretName);
+
+        if (!result) {
+          throw new Error(`Failed to remove repository secret ${repositoryName}/${environmentName}/${secretName}`);
+        }
+        secretName = undefined;
+      }
+    });
+
+    it('should create a new secret', async () => {
+      secretName = `env_secret_test_${Date.now()}`;
+
+      const state = await secretsManager.saveOrUpdateEnvironmentSecret(repositoryName, environmentName, secretName, 'testing');
+      expect(state).to.equal('created');
+    });
+
+    it('should update an existing secret', async () => {
+      secretName = `env_secret_test_${Date.now()}`;
+
+      const state = await secretsManager.saveOrUpdateEnvironmentSecret(repositoryName, environmentName, secretName, 'testing');
+      expect(state).to.equal('created');
+
+      const updatedState = await secretsManager.saveOrUpdateEnvironmentSecret(repositoryName, environmentName, secretName, 'testing');
+      expect(updatedState).to.equal('updated');
+    });
+
+    it('should not update an existing secret if overwrite is false', async () => {
+      secretName = `env_secret_test_${Date.now()}`;
+
+      const state = await secretsManager.saveOrUpdateEnvironmentSecret(repositoryName, environmentName, secretName, 'testing');
+      expect(state).to.equal('created');
+
+      const updatedState = await secretsManager.saveOrUpdateEnvironmentSecret(repositoryName, environmentName, secretName, 'testing', false);
+      expect(updatedState).to.equal('exists');
+    });
+  });
 });

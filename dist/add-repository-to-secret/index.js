@@ -247,30 +247,28 @@ class SecretsManager {
         });
     }
     async getEnvironmentSecret(repositoryName, environmentName, secretName) {
-        return this.getEnvironment(repositoryName, environmentName)
-            .then(environment => {
-            if (environment) {
-                this.octokit.rest.actions.getEnvironmentSecret({
+        const environment = await this.getEnvironment(repositoryName, environmentName);
+        if (environment) {
+            try {
+                const secret = await this.octokit.rest.actions.getEnvironmentSecret({
                     repository_id: environment.repository_id,
                     environment_name: environment.name,
                     secret_name: secretName,
-                })
-                    .then(secret => {
-                    return {
-                        ...secret.data,
-                        repository_id: environment.repository_id,
-                        environment_name: environment.name,
-                    };
-                })
-                    .catch(err => {
-                    if (err.status === 404) {
-                        return undefined;
-                    }
-                    throw err;
                 });
+                return {
+                    ...secret.data,
+                    repository_id: environment.repository_id,
+                    environment_name: environment.name,
+                };
             }
-            return undefined;
-        });
+            catch (err) {
+                if (err.status === 404) {
+                    return undefined;
+                }
+                throw err;
+            }
+        }
+        return undefined;
     }
     async addSecretToRepository(name, repositoryName) {
         return Promise.all([
@@ -513,7 +511,7 @@ class SecretsManager {
         }
     }
     async saveOrUpdateEnvironmentSecret(repositoryName, environmentName, secretName, value, overwrite = true) {
-        if (overwrite === false) {
+        if (!overwrite) {
             const existing = await this.getEnvironmentSecret(repositoryName, environmentName, secretName);
             if (existing) {
                 return 'exists';
@@ -551,52 +549,37 @@ class SecretsManager {
         });
     }
     async deleteRepositorySecret(repositoryName, secretName) {
-        return this.getRepository(repositoryName)
-            .then(repo => {
-            if (repo) {
-                return this.octokit.rest.actions.deleteRepoSecret({
-                    owner: repo.owner,
-                    repo: repo.name,
-                    secret_name: secretName
-                });
-            }
-        })
-            .then(result => {
+        const repo = await this.getRepository(repositoryName);
+        if (repo) {
+            const result = await this.octokit.rest.actions.deleteRepoSecret({
+                owner: repo.owner,
+                repo: repo.name,
+                secret_name: secretName
+            });
             if (result) {
                 return result.status === 204;
             }
             return false;
-        })
-            .catch(err => {
-            if (err.status === 404) {
-                return true;
-            }
-            throw err;
-        });
+        }
+        return false;
     }
     async deleteEnvironmentSecret(repositoryName, environmentName, secretName) {
-        return this.getEnvironmentSecret(repositoryName, environmentName, secretName)
-            .then(secret => {
-            if (secret) {
-                return this.octokit.rest.actions.deleteEnvironmentSecret({
-                    repository_id: secret.repository_id,
-                    environment_name: secret.environment_name,
-                    secret_name: secret.name,
-                });
-            }
-        })
-            .then(result => {
+        const secret = await this.getEnvironmentSecret(repositoryName, environmentName, secretName);
+        if (secret) {
+            const result = await this.octokit.rest.actions.deleteEnvironmentSecret({
+                repository_id: secret.repository_id,
+                environment_name: secret.environment_name,
+                secret_name: secret.name,
+            });
             if (result) {
                 return result.status === 204;
             }
             return false;
-        })
-            .catch(err => {
-            if (err.status === 404) {
-                return true;
-            }
-            throw err;
-        });
+        }
+        else {
+            // The secret does not exist, so we can consider it deleted
+            return true;
+        }
     }
 }
 exports.SecretsManager = SecretsManager;
