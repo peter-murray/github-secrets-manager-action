@@ -1,13 +1,13 @@
-import { expect } from 'chai';
+import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import {SecretsManager} from './SecretsManager.js';
-import {getGitHubToken, getOctokit} from '../utils.js'
+import {getGitHubTestToken, getOctokit} from '../utils.js'
 
 describe('SecretsManager', () => {
 
   let secretsManager: SecretsManager;
 
-  before(() => {
-    const octokit = getOctokit(getGitHubToken());
+  beforeAll(() => {
+    const octokit = getOctokit(getGitHubTestToken());
     const orgName = 'octodemo';
 
     secretsManager = new SecretsManager(octokit, orgName);
@@ -47,7 +47,7 @@ describe('SecretsManager', () => {
   describe('#getRepositoryPublicKey()', () => {
 
     it('should get a key for a repoistory that exists', async () => {
-      const key = await secretsManager.getRepositoryPublicKey('template-bookstore-demo');
+      const key = await secretsManager.getRepositoryPublicKey('secrets-test-repository');
 
       expect(key).to.not.be.undefined;
       expect(key).to.have.property('id').to.have.length.greaterThan(0);
@@ -123,7 +123,7 @@ describe('SecretsManager', () => {
 
   describe('#saveOrUpdateRepositorySecret() and #deleteRepositorySecret()', () => {
 
-    const repositoryName = 'template-bookstore-demo';
+    const repositoryName = 'secrets-test-repository';
 
     let secretName: string | undefined;
 

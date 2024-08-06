@@ -2,11 +2,11 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 
 
-export function getGitHubToken(): string {
-  const token = process.env['GITHUB_TOKEN'];
+export function getGitHubTestToken(): string {
+  const token = process.env['TEST_GITHUB_TOKEN'];
 
   if (!token) {
-    throw new Error('GitHub Token was not set for environment variable "GITHUB_TOKEN"');
+    throw new Error('GitHub Token was not set for environment variable "TEST_GITHUB_TOKEN"');
   }
   return token;
 }

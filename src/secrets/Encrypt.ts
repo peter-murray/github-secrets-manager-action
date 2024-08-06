@@ -1,20 +1,25 @@
-import * as sodium  from 'libsodium';
+import sodium  from 'libsodium-wrappers';
 import {requireStringArgumentValue} from '../utils.js';
 
 export class Encrypt {
 
-  private readonly publicKey: Buffer;
+  private readonly publicKey: string;
 
   constructor(publicKey: string) {
     const strValue: string = requireStringArgumentValue('publicKey', publicKey);
-    this.publicKey = Buffer.from(strValue, 'base64');
+    this.publicKey = strValue
   }
 
-  encryptValue(value: any) {
+  async encryptValue(value: any) {
     const strValue = requireStringArgumentValue('value', value);
-    const valueBuffer = Buffer.from(strValue);
 
-    const bytes = sodium.seal(valueBuffer, this.publicKey);
-    return Buffer.from(bytes).toString('base64');
+    await sodium.ready;
+    const binaryKey = sodium.from_base64(this.publicKey, sodium.base64_variants.ORIGINAL);
+    const binarySecret = sodium.from_string(strValue);
+
+    let encodedBytes = sodium.crypto_box_seal(binarySecret, binaryKey);
+
+    const encryptedValue = sodium.to_base64(encodedBytes, sodium.base64_variants.ORIGINAL);
+    return encryptedValue;
   }
 }

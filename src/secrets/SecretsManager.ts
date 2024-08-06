@@ -280,74 +280,62 @@ export class SecretsManager {
 
 
   async getOrganizationPublicKey(): Promise<SecretPublicKey | undefined> {
-    return this.octokit.rest.actions.getOrgPublicKey({ org: this.organization })
-      .then(result => {
-        if (result && result.data) {
-          return {
-            id: result.data.key_id,
-            key: result.data.key,
-          };
-        }
-        return undefined;
-      });
+    const result = await this.octokit.rest.actions.getOrgPublicKey({ org: this.organization });
+    return {
+      id: result.data.key_id,
+      key: result.data.key,
+    };
   }
 
-  async saveOrUpdateOrganizationSecret(
-    secretName: string,
-    value: string,
-    visibility?: OrgSecretVisibility,
-    selectedRepoIds?: number[]): Promise<'created' | 'updated'> {
-
-    return Promise.all([
+  async saveOrUpdateOrganizationSecret(secretName: string, value: string, visibility?: OrgSecretVisibility, selectedRepoIds?: number[]): Promise<'created' | 'updated'> {
+    const results = await Promise.all([
       this.getOrganizationPublicKey(),
       this.getOrganizationSecret(secretName)
-    ]).then(results => {
-      const keyResult = results[0];
+    ]);
 
-      if (!keyResult) {
-        throw new Error(`Failed to resolve a public key for the organization ${this.organization}`);
+    const keyResult = results[0];
+    if (!keyResult) {
+      throw new Error(`Failed to resolve a public key for the organization ${this.organization}`);
+    }
+
+    const encrypter = new Encrypt(keyResult.key);
+    const encryptedSecret = await encrypter.encryptValue(value);
+    const payload = {
+      org: this.organization,
+      secret_name: secretName,
+      key_id: keyResult.id,
+      encrypted_value: encryptedSecret,
+    }
+
+    const existingOrgSecret = results[1];
+    if (!existingOrgSecret) {
+      // New secret, some values are no longer optional
+      payload['visibility'] = visibility ? visibility : 'all';
+
+      if (visibility === 'selected') {
+        payload['selected_repository_ids'] = selectedRepoIds ? selectedRepoIds : [];
       }
-
-      const encrypter = new Encrypt(keyResult.key);
-      const encryptedSecret = encrypter.encryptValue(value);
-      const payload = {
-        org: this.organization,
-        secret_name: secretName,
-        key_id: keyResult.id,
-        encrypted_value: encryptedSecret,
-      }
-
-      const existingOrgSecret = results[1];
-      if (!existingOrgSecret) {
-        // New secret, some values are no longer optional
-        payload['visibility'] = visibility ? visibility : 'all';
-
-        if (visibility === 'selected') {
-          payload['selected_repository_ids'] = selectedRepoIds ? selectedRepoIds : [];
-        }
+    } else {
+      // updating an existing secret, some parameters are optional if not provided
+      if (visibility) {
+        payload['visibility'] = visibility;
       } else {
-        // updating an existing secret, some parameters are optional if not provided
-        if (visibility) {
-          payload['visibility'] = visibility;
-        } else {
-          payload['visibility'] = existingOrgSecret.visibility
-        }
-
-        if (visibility === 'selected' && selectedRepoIds) {
-          payload['selected_repository_ids'] = selectedRepoIds ? selectedRepoIds : [];
-        }
+        payload['visibility'] = existingOrgSecret.visibility
       }
 
-      return this.octokit.rest.actions.createOrUpdateOrgSecret(payload);
-    }).then(result => {
-      if (result.status === 201) {
-        return 'created';
-      } else if (result.status === 204) {
-        return 'updated';
-      } else {
-        throw new Error(`Unexpected status code from setting secret value ${result.status}`);
+      if (visibility === 'selected' && selectedRepoIds) {
+        payload['selected_repository_ids'] = selectedRepoIds ? selectedRepoIds : [];
       }
-    });
+    }
+
+    const createResult = await this.octokit.rest.actions.createOrUpdateOrgSecret(payload);
+    if (createResult.status === 201) {
+      return 'created';
+    } else if (createResult.status === 204) {
+      return 'updated';
+    } else {
+      throw new Error(`Unexpected status code from setting secret value ${createResult.status}`);
+    }
   }
 
   async saveOrUpdateRepositorySecret(repositoryName: string, secretName: string, value: string, overwrite: boolean = true): Promise<'created' | 'updated' | 'exists'> {
@@ -358,31 +346,29 @@ export class SecretsManager {
       }
     }
 
-    return this.getRepositoryPublicKey(repositoryName)
-      .then(key => {
-        if (!key) {
-          throw new Error(`Failed to resolve public key for repository ${this.organization}/${repositoryName}`);
-        }
-        const encrypter = new Encrypt(key.key);
-        const encryptedSecret = encrypter.encryptValue(value);
+    const key = await this.getRepositoryPublicKey(repositoryName)
+    if (!key) {
+      throw new Error(`Failed to resolve public key for repository ${this.organization}/${repositoryName}`);
+    }
+    const encrypter = new Encrypt(key.key);
+    const encryptedSecret = await encrypter.encryptValue(value);
 
-        return this.octokit.rest.actions.createOrUpdateRepoSecret({
-          owner: this.organization,
-          repo: repositoryName,
-          secret_name: secretName,
-          key_id: key.id,
-          encrypted_value: encryptedSecret
-        })
-      })
-      .then(result => {
-        if (result.status === 201) {
-          return 'created';
-        } else if (result.status === 204) {
-          return 'updated';
-        } else {
-          throw new Error(`Unexpected status code from setting secret value ${result.status}`);
-        }
-      });
+    const createResult = await this.octokit.rest.actions.createOrUpdateRepoSecret({
+      owner: this.organization,
+      repo: repositoryName,
+      secret_name: secretName,
+      key_id: key.id,
+      encrypted_value: encryptedSecret
+    })
+
+    if (createResult.status === 201) {
+      return 'created';
+    } else if (createResult.status === 204) {
+      return 'updated';
+    } else {
+      throw new Error(`Unexpected status code from setting secret value ${createResult.status}`);
+    }
+
   }
 
   async saveOrUpdateEnvironmentSecret(repositoryName: string, environmentName: string, secretName: string, value: string, overwrite: boolean = true): Promise<'created' | 'updated' | 'exists'> {
@@ -393,31 +379,28 @@ export class SecretsManager {
       }
     }
 
-    return this.getEnvironmentPublicKey(repositoryName, environmentName)
-      .then(key => {
-        if (!key) {
-          throw new Error(`Failed to resolve public key for environment ${this.organization}/${repositoryName}/environment/${environmentName}`);
-        }
-        const encrypter = new Encrypt(key.key);
-        const encryptedSecret = encrypter.encryptValue(value);
+    const key = await this.getEnvironmentPublicKey(repositoryName, environmentName)
+    if (!key) {
+      throw new Error(`Failed to resolve public key for environment ${this.organization}/${repositoryName}/environment/${environmentName}`);
+    }
+    const encrypter = new Encrypt(key.key);
+    const encryptedSecret = await encrypter.encryptValue(value);
 
-        return this.octokit.rest.actions.createOrUpdateEnvironmentSecret({
-          repository_id: key.repository_id,
-          environment_name: environmentName,
-          secret_name: secretName,
-          key_id: key.id,
-          encrypted_value: encryptedSecret
-        })
-      })
-      .then(result => {
-        if (result.status === 201) {
-          return 'created';
-        } else if (result.status === 204) {
-          return 'updated';
-        } else {
-          throw new Error(`Unexpected status code from setting secret value ${result.status}`);
-        }
-      });
+    const result = await this.octokit.rest.actions.createOrUpdateEnvironmentSecret({
+      repository_id: key.repository_id,
+      environment_name: environmentName,
+      secret_name: secretName,
+      key_id: key.id,
+      encrypted_value: encryptedSecret
+    })
+
+    if (result.status === 201) {
+      return 'created';
+    } else if (result.status === 204) {
+      return 'updated';
+    } else {
+      throw new Error(`Unexpected status code from setting secret value ${result.status}`);
+    }
   }
 
   async deleteOrganizationSecret(secretName: string): Promise<boolean> {

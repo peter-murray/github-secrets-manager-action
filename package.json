@@ -2,7 +2,7 @@
   "name": "github-secrets-manager-action",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "private": true,
   "scripts": {
     "build": "tsc",
     "build:add-repository-to-secret": "ncc build lib/actions/add-repository-to-secret.js -o dist/add-repository-to-secret --source-map",
@@ -10,7 +10,7 @@
     "build:create-or-update-repository-secret": "ncc build lib/actions/create-or-update-repository-secret.js -o dist/create-or-update-repository-secret --source-map",
     "build:create-or-update-environment-secret": "ncc build lib/actions/create-or-update-environment-secret.js -o dist/create-or-update-environment-secret --source-map",
     "build:actions": "npm run build && npm run build:add-repository-to-secret && npm run build:remove-repository-from-secret  && npm run build:create-or-update-repository-secret && npm run build:create-or-update-environment-secret",
-    "test": "mocha --recursive -r ts-node/register \"src/**/*.test.ts\""
+    "test": "vitest run"
   },
   "repository": {
     "type": "git",
@@ -22,22 +22,22 @@
   "bugs": {
     "url": "https://github.com/peter-murray/github-secrets-manager-action/issues"
   },
+  "engines": {
+    "node": "20"
+  },
   "homepage": "https://github.com/peter-murray/github-secrets-manager-action#readme",
   "dependencies": {
     "@actions/core": "^1.10.0",
     "@actions/github": "^5.1.1",
     "@octokit/rest": "^19.0.5",
     "@octokit/types": "^8.0.0",
-    "libsodium": "^0.7.13"
+    "libsodium-wrappers": "^0.7.14"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.17",
-    "@types/mocha": "^10.0.1",
-    "@types/node": "^14.14.44",
+    "@types/node": "^22.1.0",
     "@vercel/ncc": "^0.38.1",
-    "chai": "^4.3.4",
-    "mocha": "^10.2.0",
-    "ts-node": "^9.1.1",
-    "typescript": "^4.2.4"
+    "vitest": "^2.0.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
   }
 }
