@@ -7,6 +7,11 @@ inputs:
     description: The GitHub token that has 'admin:org' permissions to access and modify secrets on the specified organization
     required: true
 
+  github_api_url:
+    description: The GitHub API URL to use for the request
+    required: false
+    default: ${{ github.api_url }}
+    
   repository:
     description: The full path to the repository to save the secret to
     required: true

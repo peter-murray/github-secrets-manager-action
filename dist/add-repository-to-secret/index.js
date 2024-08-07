@@ -632,7 +632,7 @@ function getGitHubTestToken() {
 function getRequiredInput(name) {
     return core.getInput(name, { required: true });
 }
-function getOctokit(token) {
+function getOctokit(token, baseUrl) {
     let octokitToken;
     if (!token) {
         octokitToken = getRequiredInput('github_token');
@@ -640,7 +640,14 @@ function getOctokit(token) {
     else {
         octokitToken = token;
     }
-    return github.getOctokit(octokitToken);
+    let githubApiUrl;
+    if (baseUrl) {
+        githubApiUrl = baseUrl;
+    }
+    else {
+        githubApiUrl = core.getInput('github_api_url') || process.env.GITHUB_API_URL || 'https://api.github.com';
+    }
+    return github.getOctokit(octokitToken, { baseUrl: githubApiUrl });
 }
 function requireStringArgumentValue(name, value) {
     if (value === null || value === undefined) {
